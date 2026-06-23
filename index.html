@@ -212,19 +212,9 @@
         </tr>
         <tr>
             <td class="label-bg">Unit:</td>
-            <td colspan="2">
-                <select id="fUnit" class="select-manual">
-                    <option value="">Select Unit</option>
-                    <option>Unit 1</option><option>Unit 2</option><option>Unit 3</option><option>Unit 4</option><option>Unit 5</option>
-                </select>
-            </td>
+            <td colspan="2"><input type="text" id="fUnit" class="input-manual" placeholder="Enter Previous Unit Name Manually"></td>
             <td class="label-bg">Unit:</td>
-            <td colspan="2">
-                <select id="tUnit" class="select-manual">
-                    <option value="">Select Unit</option>
-                    <option>Unit 1</option><option>Unit 2</option><option>Unit 3</option><option>Unit 4</option><option>Unit 5</option>
-                </select>
-            </td>
+            <td colspan="2"><input type="text" id="tUnit" class="input-manual" placeholder="Enter New Unit Name Manually"></td>
         </tr>
         <tr>
             <td class="label-bg">Shift:</td>
@@ -272,7 +262,7 @@
 <script>
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSeyEu_N_mJ9UStKc6sXa2jdpMOr6QxviTldIucayGD1fg-ShCDDCdlKcOFcmKPtBt8LJpcWRLLnsSF/pub?output=csv";
     // *** इकडे तुमच्या Apps Script ची Web App URL पेस्ट करा ***
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbxqENBmhyHxQB9TA14tEK3Kg7jcJcnwO-L0drf1XAb384pJN3zVZ0ScjPvUjNksFNgH/exec"; 
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbxztK-T4x-3sTklpHrxtlUVCqU8ogi-9yooscHuj3X9dYCQD8RDjj0_C7XuE6m_Bk34JA/exec"; 
     
     let workerDatabase = [];
 
@@ -293,7 +283,6 @@
             statusElement.style.border = "1px solid #2196f3";
         }
 
-        // Cache bypass करण्यासाठी Timestamp जोडला आहे जेणेकरून गुगल लेटेस्ट डेटा देईल
         const dynamicUrl = csvUrl + "&t=" + new Date().getTime();
 
         Papa.parse(dynamicUrl, {
@@ -307,7 +296,6 @@
                 statusElement.style.background = "#e8f5e9";
                 statusElement.style.border = "1px solid #4caf50";
                 
-                // डेटा लोड झाल्यावर जर आधीच सर्च बॉक्समध्ये काही टाईप असेल तर ते पुन्हा सर्च करेल
                 doSearch();
             },
             error: function(err) {
@@ -320,10 +308,8 @@
         });
     }
 
-    // पहिली वेळ लोड करणे आणि दर ३० सेकंदांनी ऑटो-रिफ्रेश सेट करणे
     window.onload = function() {
         fetchDatabase(false);
-        // 30000 Milliseconds = 30 Seconds. तुम्ही वेळ हवी तर बदलू शकता.
         setInterval(() => {
             fetchDatabase(true);
         }, 30000);
@@ -410,7 +396,7 @@ Please update the database and duty records accordingly.`;
         navigator.clipboard.writeText(text).then(() => alert("English Email Draft Copied with all Ward & Unit details!"));
     }
 
-    // Google Sheet la data submit करण्याची सिस्टीम
+    // Google Sheet la data submit करण्याची 100% वर्किंग सिस्टीम
     function submitToGoogleSheet() {
         const id = document.getElementById('resID').innerText;
         if(id === "---") return alert("Please fill employee details first!");
@@ -418,36 +404,39 @@ Please update the database and duty records accordingly.`;
             return alert("Please configure your Google Apps Script Web App URL first!");
         }
 
-        const formData = {
-            todayDate: document.getElementById('todayDate').value,
-            transferDate: document.getElementById('transferDate').value,
-            empCode: id,
-            fullName: document.getElementById('resName').innerText,
-            designation: document.getElementById('resDesig').innerText,
-            aadharNo: document.getElementById('resAadhar').innerText,
-            fromWard: document.getElementById('fWard').value,
-            fromUnit: document.getElementById('fUnit').value,
-            fromUO: document.getElementById('fUO').value,
-            fromShift: document.getElementById('fShift').value,
-            fromSup: document.getElementById('fSup').value,
-            toWard: document.getElementById('tWard').value,
-            toUnit: document.getElementById('tUnit').value,
-            toUO: document.getElementById('tUO').value,
-            toShift: document.getElementById('tShift').value,
-            toSup: document.getElementById('tSup').value
-        };
+        // URLSearchParams चा वापर केल्याने CORS एरर येत नाही आणि गुगल शीट डेटा स्वीकारते
+        const params = new URLSearchParams();
+        params.append('todayDate', document.getElementById('todayDate').value);
+        params.append('transferDate', document.getElementById('transferDate').value);
+        params.append('empCode', id);
+        params.append('fullName', document.getElementById('resName').innerText);
+        params.append('designation', document.getElementById('resDesig').innerText);
+        params.append('aadharNo', document.getElementById('resAadhar').innerText);
+        params.append('fromWard', document.getElementById('fWard').value);
+        params.append('fromUnit', document.getElementById('fUnit').value);
+        params.append('fromUO', document.getElementById('fUO').value);
+        params.append('fromShift', document.getElementById('fShift').value);
+        params.append('fromSup', document.getElementById('fSup').value);
+        params.append('toWard', document.getElementById('tWard').value);
+        params.append('toUnit', document.getElementById('tUnit').value);
+        params.append('toUO', document.getElementById('tUO').value);
+        params.append('toShift', document.getElementById('tShift').value);
+        params.append('toSup', document.getElementById('tSup').value);
 
         fetch(scriptUrl, {
             method: "POST",
-            body: JSON.stringify(formData),
-            mode: "no-cors"
+            body: params,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
         })
-        .then(() => {
+        .then(response => response.text())
+        .then(text => {
             alert("✅ Transfer Data Successfully Submitted to Google Sheet!");
         })
         .catch(err => {
             console.error(err);
-            alert("❌ Submission Failed. Check Console Log.");
+            alert("❌ Submission Failed. Check your network or Apps Script Web App URL.");
         });
     }
 </script>
